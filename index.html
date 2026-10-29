@@ -133,7 +133,7 @@ function renderExpenses(){
     return `<tr>
       <td><input data-exp-place="${e.id}" value="${esc(e.place)}" aria-label="Название заведения"></td>
       <td><select data-exp-payer="${e.id}" aria-label="Плательщик">${payerOptions}</select></td>
-      <td style="min-width:125px"><input type="number" min="0" step="0.01" data-exp-amount="${e.id}" value="${e.amount}" aria-label="Сумма чека"></td>
+      <td style="min-width:125px"><input type="text" inputmode="decimal" autocomplete="off" data-exp-amount="${e.id}" value="${e.amount || ''}" aria-label="Сумма чека" placeholder="Например, 16800"></td>
       <td><div class="participant-checks">${checks}</div></td>
       <td>${count}</td><td class="amount">${count?money(share):'—'}</td>
       <td><button class="danger" data-remove-expense="${e.id}" type="button">Удалить</button></td>
@@ -141,7 +141,20 @@ function renderExpenses(){
   }).join('') : '<tr><td colspan="7" class="empty">Пока нет чеков. Добавьте участников, затем нажмите «Добавить чек».</td></tr>';
   body.querySelectorAll('[data-exp-place]').forEach(i=>i.addEventListener('change',()=>{findExpense(i.dataset.expPlace).place=i.value;renderBalances();}));
   body.querySelectorAll('[data-exp-payer]').forEach(i=>i.addEventListener('change',()=>{findExpense(i.dataset.expPayer).payer=Number(i.value);renderBalances();}));
-  body.querySelectorAll('[data-exp-amount]').forEach(i=>i.addEventListener('input',()=>{findExpense(i.dataset.expAmount).amount=Math.max(0,Number(i.value)||0);renderExpenses();renderBalances();}));
+  body.querySelectorAll('[data-exp-amount]').forEach(i=>i.addEventListener('input',()=>{
+    const e=findExpense(i.dataset.expAmount);
+    // Не перерисовываем таблицу на каждый символ: иначе поле теряет фокус после ввода цифры.
+    // Поддерживаем числа, десятичную запятую и пробелы при вставке суммы.
+    const normalized=i.value.replace(/\s/g,'').replace(',', '.');
+    const parsed=normalized==='' ? 0 : Number(normalized);
+    if(e) e.amount=Number.isFinite(parsed) ? Math.max(0,parsed) : 0;
+    const row=i.closest('tr');
+    if(row){
+      const count=e ? e.participants.length : 0;
+      row.cells[5].textContent=count ? money(e.amount/count) : '—';
+    }
+    renderBalances();
+  }));
   body.querySelectorAll('[data-exp-check]').forEach(i=>i.addEventListener('change',()=>{
     const e=findExpense(i.dataset.expCheck), id=Number(i.dataset.person);
     e.participants=i.checked?[...new Set([...e.participants,id])]:e.participants.filter(x=>x!==id);
