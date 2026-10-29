@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор общих расходов</title>
+<style>
+:root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#e7f0ff;background:#030712;color-scheme:dark;--panel:rgba(6,16,36,.88);--line:rgba(61,130,255,.42);--cyan:#00e5ff;--blue:#3478ff;--purple:#b14cff;--pink:#ff4fd8;--muted:#91a9cc;--text:#eaf2ff}
+*{box-sizing:border-box}
+body{margin:0;padding:26px;background:radial-gradient(ellipse at 8% 0%,rgba(29,78,216,.24),transparent 34%),radial-gradient(ellipse at 94% 10%,rgba(177,76,255,.16),transparent 28%),radial-gradient(ellipse at 70% 100%,rgba(0,229,255,.09),transparent 32%),#030712;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:linear-gradient(rgba(77,119,190,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(77,119,190,.12) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 90%)}
+main{max-width:1280px;margin:auto;position:relative;z-index:1}
+h1{margin:0 0 8px;font-size:clamp(26px,4vw,38px);letter-spacing:-.035em;color:#fff;text-shadow:0 0 18px rgba(0,229,255,.35)}
+h2{font-size:20px;margin:0 0 14px;color:#f1f6ff}
+p{line-height:1.55;color:var(--muted)}
+.card{background:linear-gradient(145deg,rgba(8,19,43,.94),rgba(3,10,24,.94));border:1px solid var(--line);border-radius:17px;padding:21px;margin:19px 0;box-shadow:0 0 0 1px rgba(0,229,255,.035) inset,0 0 24px rgba(30,100,255,.10),inset 0 1px rgba(255,255,255,.035);backdrop-filter:blur(12px)}
+.card:hover{border-color:rgba(0,229,255,.62);box-shadow:0 0 0 1px rgba(0,229,255,.06) inset,0 0 28px rgba(0,229,255,.10)}
+.topline{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+button{border:1px solid rgba(0,229,255,.5);border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer;color:#f4fbff;background:linear-gradient(110deg,#164bcb,#5421a7);box-shadow:0 0 14px rgba(65,90,255,.22),inset 0 1px rgba(255,255,255,.15);transition:transform .15s,box-shadow .15s,border-color .15s}
+button:hover{transform:translateY(-1px);border-color:var(--cyan);box-shadow:0 0 19px rgba(0,229,255,.24)}
+button.secondary{background:rgba(8,23,49,.9);color:#bdeeff;border-color:rgba(66,130,255,.58)}
+button.danger{background:rgba(66,12,42,.75);color:#ff8db8;border-color:rgba(255,79,146,.45);padding:7px 10px;box-shadow:none}
+input,select{font:inherit;border:1px solid rgba(105,145,203,.38);border-radius:8px;padding:9px 10px;min-width:0;background:rgba(3,11,27,.95);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.10),0 0 13px rgba(0,229,255,.12)}
+input[type=number]{width:100%}
+.people-list{display:flex;gap:9px;flex-wrap:wrap}
+.person-chip{display:flex;gap:6px;align-items:center;background:rgba(11,26,54,.76);padding:7px 8px;border:1px solid rgba(69,115,190,.22);border-radius:11px;box-shadow:inset 0 1px rgba(255,255,255,.025)}
+.person-chip input{width:150px}
+.table-wrap{overflow-x:auto;border:1px solid rgba(77,126,190,.22);border-radius:11px}
+table{border-collapse:collapse;width:100%;min-width:650px;background:rgba(2,9,23,.28)}
+th,td{padding:11px 10px;border-bottom:1px solid rgba(92,128,182,.18);text-align:left;vertical-align:middle}
+th{font-size:13px;color:#9fd7ff;background:rgba(11,29,59,.88);white-space:nowrap;text-transform:uppercase;letter-spacing:.035em}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(24,77,140,.15)}
+tbody tr:last-child td{border-bottom:0}
+.expense-table{min-width:850px}
+.participant-checks{display:flex;gap:9px;flex-wrap:wrap}
+.check{display:inline-flex;gap:5px;align-items:center;white-space:nowrap;color:#dbeafe}
+.check input{width:16px;height:16px;accent-color:var(--cyan)}
+.amount{font-weight:750;white-space:nowrap;color:#e9faff}
+.positive{color:#39f5b5;font-weight:750;text-shadow:0 0 12px rgba(57,245,181,.16)}
+.negative{color:#ff6c9d;font-weight:750;text-shadow:0 0 12px rgba(255,108,157,.13)}
+.neutral{color:#a4b5ce}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.metric{border:1px solid rgba(71,134,226,.3);border-radius:12px;padding:14px;background:rgba(6,19,42,.7)}
+.metric .label{font-size:13px;color:var(--muted);margin-bottom:7px}
+.metric .value{font-size:22px;font-weight:750;color:#fff;text-shadow:0 0 14px rgba(0,229,255,.18)}
+.note{font-size:13px;color:#8299bb}
+.status{padding:12px 14px;background:linear-gradient(90deg,rgba(0,229,255,.08),rgba(90,60,255,.07));border:1px solid rgba(0,229,255,.25);border-radius:10px;margin-top:13px;color:#ccecff}
+.empty{text-align:center;color:#8299bb;padding:22px}
+::selection{background:rgba(0,229,255,.3);color:#fff}
+@media(max-width:600px){body{padding:12px}.card{padding:14px}th,td{padding:8px 7px}h2{font-size:18px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="topline">
+    <div>
+      <div style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#00e5ff;margin-bottom:8px;text-shadow:0 0 12px rgba(0,229,255,.55)">NEON SPLIT · EXPENSE CONTROL</div><h1>Калькулятор общих расходов</h1>
+      <p>Добавляйте чеки из разных заведений, выбирайте плательщика и отмечайте, кто участвовал в расходе. Балансы и итоговые переводы пересчитываются автоматически.</p>
+    </div>
+    <button class="secondary" id="resetBtn" type="button">Очистить расчёт</button>
+  </div>
+
+  <section class="card">
+    <div class="topline"><h2>1. Участники</h2><button id="addPersonBtn" type="button">+ Добавить участника</button></div>
+    <p class="note">Можно переименовать участников. Удалить можно только участника, который не выбран в чеках.</p>
+    <div id="people" class="people-list"></div>
+  </section>
+
+  <section class="card">
+    <div class="topline"><h2>2. Расходы по заведениям</h2><button id="addExpenseBtn" type="button">+ Добавить чек</button></div>
+    <p class="note">Отмечайте всех, чья доля входит в чек, включая плательщика, если он тоже участвовал. Сумма чека делится поровну между отмеченными людьми.</p>
+    <div class="table-wrap">
+      <table class="expense-table">
+        <thead><tr><th>Заведение / чек</th><th>Кто платил</th><th>Сумма, ₽</th><th>За кого платили</th><th>Участников</th><th>Доля на человека</th><th></th></tr></thead>
+        <tbody id="expenses"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3. Итоговые балансы</h2>
+    <p class="note">Баланс = сколько человек заплатил минус его доля расходов. Плюс — ему должны вернуть деньги; минус — ему нужно доплатить.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Участник</th><th>Всего заплатил</th><th>Его доля расходов</th><th>Баланс</th><th>Статус</th></tr></thead>
+        <tbody id="balances"></tbody>
+      </table>
+    </div>
+    <div id="control" class="status"></div>
+  </section>
+
+  <section class="card">
+    <h2>4. Кто кому сколько переводит</h2>
+    <p class="note">Это оптимизированный план взаиморасчётов: он закрывает итоговые балансы, а не отражает отдельные долги по каждому чеку. Поэтому перевод может быть человеку, который не платил за вас в конкретном заведении.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Кто переводит</th><th>Кому переводит</th><th>Сколько, ₽</th></tr></thead>
+        <tbody id="transfers"></tbody>
+      </table>
+    </div>
+    <div id="transferSummary" class="status"></div>
+  </section>
+  <p class="note">Все расчёты выполняются в браузере на этой странице. Данные не отправляются на сервер. Чтобы сохранить текущие данные, используйте «Печать → Сохранить как PDF» в браузере.</p>
+</main>
+<script>
+let people, expenses, nextPersonId, nextExpenseId;
+const money = n => new Intl.NumberFormat('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}).format(Math.abs(n)) + ' ₽';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function init(){
+  people=[];
+  expenses=[];
+  nextPersonId=1; nextExpenseId=1; render();
+}
+function personName(id){return people.find(p=>p.id===Number(id))?.name || '—'}
+function renderPeople(){
+  const el=document.getElementById('people');
+  el.innerHTML=people.length ? people.map(p=>`<div class="person-chip"><input aria-label="Имя участника" data-person-name="${p.id}" value="${esc(p.name)}"><button class="danger" data-remove-person="${p.id}" title="Удалить участника" type="button">×</button></div>`).join('') : '<div class="empty">Пока нет участников. Нажмите «Добавить участника», чтобы начать.</div>';
+  el.querySelectorAll('[data-person-name]').forEach(inp=>inp.addEventListener('change',()=>{const p=people.find(x=>x.id===Number(inp.dataset.personName)); if(p){p.name=inp.value.trim()||'Участник'; render();}}));
+  el.querySelectorAll('[data-remove-person]').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=Number(btn.dataset.removePerson);
+    if(expenses.some(e=>e.payer===id||e.participants.includes(id))){alert('Сначала уберите участника из чеков или удалите эти чеки.');return;}
+    people=people.filter(p=>p.id!==id);render();
+  }));
+}
+function renderExpenses(){
+  const body=document.getElementById('expenses');
+  body.innerHTML=expenses.length ? expenses.map(e=>{
+    const payerOptions=people.map(p=>`<option value="${p.id}" ${p.id===e.payer?'selected':''}>${esc(p.name)}</option>`).join('');
+    const checks=people.map(p=>`<label class="check"><input type="checkbox" data-exp-check="${e.id}" data-person="${p.id}" ${e.participants.includes(p.id)?'checked':''}>${esc(p.name)}</label>`).join('');
+    const count=e.participants.length, share=count?e.amount/count:0;
+    return `<tr>
+      <td><input data-exp-place="${e.id}" value="${esc(e.place)}" aria-label="Название заведения"></td>
+      <td><select data-exp-payer="${e.id}" aria-label="Плательщик">${payerOptions}</select></td>
+      <td style="min-width:125px"><input type="number" min="0" step="0.01" data-exp-amount="${e.id}" value="${e.amount}" aria-label="Сумма чека"></td>
+      <td><div class="participant-checks">${checks}</div></td>
+      <td>${count}</td><td class="amount">${count?money(share):'—'}</td>
+      <td><button class="danger" data-remove-expense="${e.id}" type="button">Удалить</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" class="empty">Пока нет чеков. Добавьте участников, затем нажмите «Добавить чек».</td></tr>';
+  body.querySelectorAll('[data-exp-place]').forEach(i=>i.addEventListener('change',()=>{findExpense(i.dataset.expPlace).place=i.value;renderBalances();}));
+  body.querySelectorAll('[data-exp-payer]').forEach(i=>i.addEventListener('change',()=>{findExpense(i.dataset.expPayer).payer=Number(i.value);renderBalances();}));
+  body.querySelectorAll('[data-exp-amount]').forEach(i=>i.addEventListener('input',()=>{findExpense(i.dataset.expAmount).amount=Math.max(0,Number(i.value)||0);renderExpenses();renderBalances();}));
+  body.querySelectorAll('[data-exp-check]').forEach(i=>i.addEventListener('change',()=>{
+    const e=findExpense(i.dataset.expCheck), id=Number(i.dataset.person);
+    e.participants=i.checked?[...new Set([...e.participants,id])]:e.participants.filter(x=>x!==id);
+    renderExpenses();renderBalances();
+  }));
+  body.querySelectorAll('[data-remove-expense]').forEach(b=>b.addEventListener('click',()=>{expenses=expenses.filter(e=>e.id!==Number(b.dataset.removeExpense));render();}));
+}
+function findExpense(id){return expenses.find(e=>e.id===Number(id))}
+function calculate(){
+  const stats=new Map(people.map(p=>[p.id,{paid:0,share:0,balance:0}]));
+  expenses.forEach(e=>{
+    if(stats.has(e.payer)) stats.get(e.payer).paid+=e.amount;
+    const valid=e.participants.filter(id=>stats.has(id));
+    if(valid.length) valid.forEach(id=>stats.get(id).share+=e.amount/valid.length);
+  });
+  stats.forEach(s=>s.balance=s.paid-s.share);
+  return stats;
+}
+function renderBalances(){
+  const stats=calculate(), body=document.getElementById('balances');
+  body.innerHTML=people.map(p=>{
+    const s=stats.get(p.id), b=s.balance;
+    const cls=b>0.005?'positive':b< -0.005?'negative':'neutral';
+    const status=b>0.005?'Ему должны':b< -0.005?'Он должен':'Расчёт закрыт';
+    return `<tr><td><strong>${esc(p.name)}</strong></td><td>${money(s.paid)}</td><td>${money(s.share)}</td><td class="${cls}">${b>0.005?'+':b< -0.005?'−':''}${money(b)}</td><td class="${cls}">${status}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" class="empty">Добавьте участников.</td></tr>';
+  const total=Array.from(stats.values()).reduce((sum,s)=>sum+s.balance,0);
+  document.getElementById('control').innerHTML=people.length===0 && expenses.length===0 ? '<strong>Начните новый расчёт:</strong> добавьте участников и чеки.' : Math.abs(total)<0.01
+    ? '<strong>Контроль пройден:</strong> сумма балансов равна 0 ₽.'
+    : `<strong>Внимание:</strong> сумма балансов не равна нулю (${money(total)}). Проверьте чеки и участников.`;
+  renderTransfers(stats);
+}
+function renderTransfers(stats){
+  const debtors=[], creditors=[];
+  people.forEach(p=>{const b=stats.get(p.id).balance;if(b< -0.005)debtors.push({id:p.id,name:p.name,left:-b});else if(b>0.005)creditors.push({id:p.id,name:p.name,left:b});});
+  debtors.sort((a,b)=>b.left-a.left); creditors.sort((a,b)=>b.left-a.left);
+  const transfers=[];let i=0,j=0;
+  while(i<debtors.length&&j<creditors.length){
+    const amount=Math.min(debtors[i].left,creditors[j].left);
+    if(amount>0.005)transfers.push({from:debtors[i].name,to:creditors[j].name,amount});
+    debtors[i].left-=amount;creditors[j].left-=amount;
+    if(debtors[i].left<0.01)i++;
+    if(creditors[j].left<0.01)j++;
+  }
+  const body=document.getElementById('transfers');
+  body.innerHTML=transfers.length?transfers.map(t=>`<tr><td>${esc(t.from)}</td><td>${esc(t.to)}</td><td class="amount">${money(t.amount)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Переводы не нужны — все расчёты закрыты.</td></tr>';
+  document.getElementById('transferSummary').innerHTML=people.length===0 ? 'После добавления расходов здесь появится план переводов.' : `<strong>Количество переводов:</strong> ${transfers.length}. <span class="note">Суммы рассчитаны по итоговым балансам.</span>`;
+}
+function render(){renderPeople();renderExpenses();renderBalances()}
+document.getElementById('addPersonBtn').addEventListener('click',()=>{
+  if(people.length>=20){alert('В этом калькуляторе поддерживается до 20 участников.');return;}
+  people.push({id:nextPersonId++,name:'Участник '+(people.length+1)});render();
+});
+document.getElementById('addExpenseBtn').addEventListener('click',()=>{
+  if(!people.length){alert('Сначала добавьте участника.');return;}
+  expenses.push({id:nextExpenseId++,place:'Новое заведение',payer:people[0].id,amount:0,participants:[people[0].id]});render();
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Очистить всех участников и чеки? Текущий расчёт будет потерян.'))init();});
+init();
+</script>
+</body>
+</html>
