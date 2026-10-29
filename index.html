@@ -59,7 +59,7 @@ tbody tr:last-child td{border-bottom:0}
       <div style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#00e5ff;margin-bottom:8px;text-shadow:0 0 12px rgba(0,229,255,.55)">NEON SPLIT · EXPENSE CONTROL</div><h1>Калькулятор общих расходов</h1>
       <p>Добавляйте чеки из разных заведений, выбирайте плательщика и отмечайте, кто участвовал в расходе. Балансы и итоговые переводы пересчитываются автоматически.</p>
     </div>
-    <button class="secondary" id="resetBtn" type="button">Сбросить пример</button>
+    <button class="secondary" id="resetBtn" type="button">Очистить расчёт</button>
   </div>
 
   <section class="card">
@@ -105,27 +105,18 @@ tbody tr:last-child td{border-bottom:0}
   <p class="note">Все расчёты выполняются в браузере на этой странице. Данные не отправляются на сервер. Чтобы сохранить текущие данные, используйте «Печать → Сохранить как PDF» в браузере.</p>
 </main>
 <script>
-const defaultPeople = [
-  {id:1,name:"Дима"},{id:2,name:"Максим"},{id:3,name:"Саша"},{id:4,name:"Валера"}
-];
-const defaultExpenses = [
-  {id:1,place:"Бар 1",payer:1,amount:16800,participants:[1,2,3,4]},
-  {id:2,place:"Бар 2",payer:3,amount:2300,participants:[3,4]},
-  {id:3,place:"Бар 3",payer:2,amount:4500,participants:[1,2]},
-  {id:4,place:"Бар 4",payer:4,amount:17800,participants:[1,4]}
-];
 let people, expenses, nextPersonId, nextExpenseId;
 const money = n => new Intl.NumberFormat('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:2}).format(Math.abs(n)) + ' ₽';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function init(){
-  people=defaultPeople.map(p=>({...p}));
-  expenses=defaultExpenses.map(e=>({...e,participants:[...e.participants]}));
-  nextPersonId=5; nextExpenseId=5; render();
+  people=[];
+  expenses=[];
+  nextPersonId=1; nextExpenseId=1; render();
 }
 function personName(id){return people.find(p=>p.id===Number(id))?.name || '—'}
 function renderPeople(){
   const el=document.getElementById('people');
-  el.innerHTML=people.map(p=>`<div class="person-chip"><input aria-label="Имя участника" data-person-name="${p.id}" value="${esc(p.name)}"><button class="danger" data-remove-person="${p.id}" title="Удалить участника" type="button">×</button></div>`).join('');
+  el.innerHTML=people.length ? people.map(p=>`<div class="person-chip"><input aria-label="Имя участника" data-person-name="${p.id}" value="${esc(p.name)}"><button class="danger" data-remove-person="${p.id}" title="Удалить участника" type="button">×</button></div>`).join('') : '<div class="empty">Пока нет участников. Нажмите «Добавить участника», чтобы начать.</div>';
   el.querySelectorAll('[data-person-name]').forEach(inp=>inp.addEventListener('change',()=>{const p=people.find(x=>x.id===Number(inp.dataset.personName)); if(p){p.name=inp.value.trim()||'Участник'; render();}}));
   el.querySelectorAll('[data-remove-person]').forEach(btn=>btn.addEventListener('click',()=>{
     const id=Number(btn.dataset.removePerson);
@@ -135,7 +126,7 @@ function renderPeople(){
 }
 function renderExpenses(){
   const body=document.getElementById('expenses');
-  body.innerHTML=expenses.map(e=>{
+  body.innerHTML=expenses.length ? expenses.map(e=>{
     const payerOptions=people.map(p=>`<option value="${p.id}" ${p.id===e.payer?'selected':''}>${esc(p.name)}</option>`).join('');
     const checks=people.map(p=>`<label class="check"><input type="checkbox" data-exp-check="${e.id}" data-person="${p.id}" ${e.participants.includes(p.id)?'checked':''}>${esc(p.name)}</label>`).join('');
     const count=e.participants.length, share=count?e.amount/count:0;
@@ -147,7 +138,7 @@ function renderExpenses(){
       <td>${count}</td><td class="amount">${count?money(share):'—'}</td>
       <td><button class="danger" data-remove-expense="${e.id}" type="button">Удалить</button></td>
     </tr>`;
-  }).join('');
+  }).join('') : '<tr><td colspan="7" class="empty">Пока нет чеков. Добавьте участников, затем нажмите «Добавить чек».</td></tr>';
   body.querySelectorAll('[data-exp-place]').forEach(i=>i.addEventListener('change',()=>{findExpense(i.dataset.expPlace).place=i.value;renderBalances();}));
   body.querySelectorAll('[data-exp-payer]').forEach(i=>i.addEventListener('change',()=>{findExpense(i.dataset.expPayer).payer=Number(i.value);renderBalances();}));
   body.querySelectorAll('[data-exp-amount]').forEach(i=>i.addEventListener('input',()=>{findExpense(i.dataset.expAmount).amount=Math.max(0,Number(i.value)||0);renderExpenses();renderBalances();}));
@@ -178,7 +169,7 @@ function renderBalances(){
     return `<tr><td><strong>${esc(p.name)}</strong></td><td>${money(s.paid)}</td><td>${money(s.share)}</td><td class="${cls}">${b>0.005?'+':b< -0.005?'−':''}${money(b)}</td><td class="${cls}">${status}</td></tr>`;
   }).join('') || '<tr><td colspan="5" class="empty">Добавьте участников.</td></tr>';
   const total=Array.from(stats.values()).reduce((sum,s)=>sum+s.balance,0);
-  document.getElementById('control').innerHTML=Math.abs(total)<0.01
+  document.getElementById('control').innerHTML=people.length===0 && expenses.length===0 ? '<strong>Начните новый расчёт:</strong> добавьте участников и чеки.' : Math.abs(total)<0.01
     ? '<strong>Контроль пройден:</strong> сумма балансов равна 0 ₽.'
     : `<strong>Внимание:</strong> сумма балансов не равна нулю (${money(total)}). Проверьте чеки и участников.`;
   renderTransfers(stats);
@@ -197,7 +188,7 @@ function renderTransfers(stats){
   }
   const body=document.getElementById('transfers');
   body.innerHTML=transfers.length?transfers.map(t=>`<tr><td>${esc(t.from)}</td><td>${esc(t.to)}</td><td class="amount">${money(t.amount)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Переводы не нужны — все расчёты закрыты.</td></tr>';
-  document.getElementById('transferSummary').innerHTML=`<strong>Количество переводов:</strong> ${transfers.length}. <span class="note">Суммы рассчитаны по итоговым балансам.</span>`;
+  document.getElementById('transferSummary').innerHTML=people.length===0 ? 'После добавления расходов здесь появится план переводов.' : `<strong>Количество переводов:</strong> ${transfers.length}. <span class="note">Суммы рассчитаны по итоговым балансам.</span>`;
 }
 function render(){renderPeople();renderExpenses();renderBalances()}
 document.getElementById('addPersonBtn').addEventListener('click',()=>{
@@ -208,7 +199,7 @@ document.getElementById('addExpenseBtn').addEventListener('click',()=>{
   if(!people.length){alert('Сначала добавьте участника.');return;}
   expenses.push({id:nextExpenseId++,place:'Новое заведение',payer:people[0].id,amount:0,participants:[people[0].id]});render();
 });
-document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Вернуть исходный пример? Текущие изменения будут потеряны.'))init();});
+document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Очистить всех участников и чеки? Текущий расчёт будет потерян.'))init();});
 init();
 </script>
 </body>
